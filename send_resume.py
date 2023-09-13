@@ -36,7 +36,10 @@ for index, row in df.iterrows():
     
     # Check if the email has already been sent
     if is_email_sent(email):
-        print(f'{email} has already been sent. Skipping...')
+        print(f'{email} has already been sent. Skipping...',end="")
+        df = df[df['email'] != email]
+        print(" and deleted...!!")
+        
         continue
         
     # Create the email message for this HR contact
