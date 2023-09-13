@@ -5,7 +5,7 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.application import MIMEApplication
 from email.utils import formatdate
 import os
-import csv  # Import the csv module
+import csv  
 from dotenv import load_dotenv
 
 # Load environment variables from .env file
@@ -21,8 +21,24 @@ df = pd.read_csv('hr_contacts.csv')
 # Create a list to store successfully sent email IDs
 sent_emails = []
 
+# Check if the email address is present in sentbox.csv before sending
+def is_email_sent(email):
+    with open('sentbox.csv', 'r') as csvfile:
+        reader = csv.reader(csvfile)
+        for row in reader:
+            if email in row:
+                return True
+    return False
+
 # Iterate through each HR contact and send individual emails
 for index, row in df.iterrows():
+    email = row['email']
+    
+    # Check if the email has already been sent
+    if is_email_sent(email):
+        print(f'{email} has already been sent. Skipping...')
+        continue
+        
     # Create the email message for this HR contact
     subject = 'Application for full stack python developer'
     body = f"Hello,\n\n"
@@ -37,7 +53,7 @@ for index, row in df.iterrows():
 
     msg = MIMEMultipart()
     msg['From'] = sender_email
-    msg['To'] = row['email']  # Send to the specific HR email for this iteration
+    msg['To'] = email
     msg['Date'] = formatdate(localtime=True)
     msg['Subject'] = subject
 
@@ -55,20 +71,24 @@ for index, row in df.iterrows():
         smtp_server.login(sender_email, sender_password)
 
         text = msg.as_string()
-        smtp_server.sendmail(sender_email, row['email'], text)
+        smtp_server.sendmail(sender_email, email, text)
 
         smtp_server.quit()
-        print(f'Resume sent successfully to HR: {row["email"]}, Email: {row["email"]}')
-        
-        # Append the successfully sent email ID to the list
-        sent_emails.append(row['email'])
+        print(f'Resume sent successfully to HR: {email}')
+
+        sent_emails.append(email)
 
     except Exception as e:
-        print(f'An error occurred while sending to HR: {row["email"]}, Email: {row["email"]}: {e}')
+        print(f'An error occurred while sending to HR: {email}: {e}')
 
 # After sending all emails, open sentbox.csv in append mode and write the email IDs
 with open('sentbox.csv', 'a', newline='') as csvfile:
     writer = csv.writer(csvfile)
-    # writer.writerow(['Sent Emails'])  # Add a header if necessary
     for email in sent_emails:
         writer.writerow([email])
+
+# Remove sent emails from hr_contacts.csv
+df = df[~df['email'].isin(sent_emails)]
+df.to_csv('hr_contacts.csv', index=False)
+
+
