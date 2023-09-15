@@ -30,6 +30,9 @@ def is_email_sent(email):
                 return True
     return False
 
+# Remove duplicate email addresses from the HR contacts dataframe
+df = df.drop_duplicates(subset=['email'])
+
 # Iterate through each HR contact and send individual emails
 for index, row in df.iterrows():
     email = row['email']
@@ -93,5 +96,3 @@ with open('sentbox.csv', 'a', newline='') as csvfile:
 # Remove sent emails from hr_contacts.csv
 df = df[~df['email'].isin(sent_emails)]
 df.to_csv('hr_contacts.csv', index=False)
-
-
